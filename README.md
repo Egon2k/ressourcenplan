@@ -44,10 +44,24 @@ Dort können Sie Mitarbeiter dem Projekt zuordnen und deren monatliche Auslastun
 
 #### Übersicht
 
-Die Übersichtsseite zeigt:
-- **Oben**: Gesamtauslastung je Mitarbeiter über alle Monate des gewählten Jahres  
-  – Grün = ≤ 100 %, Rot = überlastet
-- **Darunter**: Auslastung je Projekt mit allen zugeordneten Mitarbeitern
+Die Übersichtsseite zeigt zwei Bereiche für das gewählte Jahr:
+
+**Gesamtauslastung je Mitarbeiter** (oben):
+
+| Farbe | Bedeutung |
+|---|---|
+| Rot | 0–33 % oder > 100 % |
+| Orange | 34–66 % |
+| Grün | 67–100 % |
+
+- **Filter**: Suchfeld oben rechts filtert Mitarbeiter nach Name oder Rolle
+- **Sortierung**: Klick auf eine Spaltenüberschrift sortiert die Tabelle; ein zweiter Klick kehrt die Richtung um (↑/↓)
+  - Spalte „Mitarbeiter" → alphabetisch
+  - Monatsspalten → nach Auslastung aufsteigend/absteigend
+
+**Auslastung je Projekt** (darunter):  
+Pro Projekt eine Tabelle mit allen zugeordneten Mitarbeitern und deren monatlichen Prozentwerten.  
+Der Projekttitel ist ein direkter Link zur Detailansicht.
 
 Mit dem Jahresumschalter oben rechts wechseln Sie das angezeigte Jahr.
 
@@ -93,7 +107,7 @@ src/
 ├── store.js              # localStorage-Hooks + Datenmigration
 ├── index.css             # Globales CSS
 └── pages/
-    ├── Overview.jsx       # Jahresübersicht (Mitarbeiter × Monate)
+    ├── Overview.jsx       # Jahresübersicht (Filter, Sortierung, Farbskala)
     ├── Employees.jsx      # Mitarbeiter CRUD
     ├── Projects.jsx       # Projekte CRUD + CategoryBadge-Komponente
     ├── ProjectDetail.jsx  # Monatliche Zuordnungsmatrix
