@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useEmployees, useProjects, useAssignments } from '../store.js'
 
-const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
 
-function toYM(year, month) {
-  return `${year}-${String(month + 1).padStart(2, '0')}`
+function toYM(year, monthIndex) {
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 }
 
 export default function Overview() {
@@ -15,104 +14,141 @@ export default function Overview() {
 
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth()) // 0-indexed
 
-  function prevMonth() {
-    if (month === 0) { setMonth(11); setYear(y => y - 1) }
-    else setMonth(m => m - 1)
-  }
-  function nextMonth() {
-    if (month === 11) { setMonth(0); setYear(y => y + 1) }
-    else setMonth(m => m + 1)
-  }
-
-  const ym = toYM(year, month)
-
-  function getPct(empId, projId) {
-    const a = assignments.find(a => a.employeeId === empId && a.projectId === projId)
-    if (!a) return 0
-    if (a.months) return a.months[ym] || 0
-    return a.percentage || 0
-  }
-
-  function getTotal(empId) {
+  function getTotal(empId, monthIndex) {
+    const ym = toYM(year, monthIndex)
     return assignments
       .filter(a => a.employeeId === empId)
-      .reduce((sum, a) => {
-        if (a.months) return sum + (a.months[ym] || 0)
-        return sum + (a.percentage || 0)
-      }, 0)
+      .reduce((sum, a) => sum + ((a.months && a.months[ym]) || 0), 0)
   }
 
-  if (employees.length === 0 || projects.length === 0) {
+  function getProjectPct(empId, projId, monthIndex) {
+    const ym = toYM(year, monthIndex)
+    const a = assignments.find(a => a.employeeId === empId && a.projectId === projId)
+    return (a && a.months && a.months[ym]) || 0
+  }
+
+  if (employees.length === 0) {
     return (
       <>
         <h1>Übersicht</h1>
         <div className="card">
           <p className="empty-state">
-            Bitte zuerst <a href="/mitarbeiter">Mitarbeiter</a> und <a href="/projekte">Projekte</a> anlegen, um die Übersicht zu sehen.
+            Bitte zuerst <a href="/mitarbeiter">Mitarbeiter</a> und <a href="/projekte">Projekte</a> anlegen.
           </p>
         </div>
       </>
     )
   }
 
+  // Collect projects that have at least one assignment in this year
+  const activeProjects = projects.filter(p =>
+    assignments.some(a => a.projectId === p.id &&
+      a.months && MONTHS.some((_, i) => a.months[toYM(year, i)])
+    )
+  )
+
   return (
     <>
       <div className="header-row">
-        <h1 style={{ marginBottom: 0 }}>Übersicht</h1>
-        <div className="month-nav">
-          <button className="btn btn-secondary btn-sm" onClick={prevMonth}>←</button>
-          <span className="month-label">{MONTH_NAMES[month]} {year}</span>
-          <button className="btn btn-secondary btn-sm" onClick={nextMonth}>→</button>
+        <h1 style={{ marginBottom: 0 }}>Übersicht {year}</h1>
+        <div className="year-nav">
+          <button className="btn btn-secondary btn-sm" onClick={() => setYear(y => y - 1)}>←</button>
+          <span className="year-label">{year}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => setYear(y => y + 1)}>→</button>
         </div>
       </div>
-      <div className="card">
-        <div className="matrix-table-wrap">
-          <table className="matrix-table">
-            <thead>
-              <tr>
-                <th>Mitarbeiter</th>
-                {projects.map(p => (
-                  <th key={p.id}>{p.name}</th>
-                ))}
-                <th>Gesamt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employees.map(emp => {
-                const total = getTotal(emp.id)
-                return (
-                  <tr key={emp.id}>
-                    <td>
-                      <strong>{emp.name}</strong>
-                      {emp.role && <div style={{ fontSize: '0.78rem', color: '#718096' }}>{emp.role}</div>}
+
+      <div className="card" style={{ overflowX: 'auto' }}>
+        <table className="monthly-grid">
+          <thead>
+            <tr>
+              <th className="emp-col">Mitarbeiter</th>
+              {MONTHS.map((m, i) => <th key={i} className="month-col">{m}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {employees.map(emp => (
+              <tr key={emp.id}>
+                <td className="emp-col">
+                  <strong>{emp.name}</strong>
+                  {emp.role && <div className="emp-role">{emp.role}</div>}
+                  {activeProjects.length > 0 && activeProjects.map(p => {
+                    const hasAny = MONTHS.some((_, i) => getProjectPct(emp.id, p.id, i) > 0)
+                    if (!hasAny) return null
+                    return (
+                      <div key={p.id} className="emp-role" style={{ color: '#a0aec0', fontSize: '0.72rem' }}>
+                        {p.name}
+                      </div>
+                    )
+                  })}
+                </td>
+                {MONTHS.map((_, i) => {
+                  const total = getTotal(emp.id, i)
+                  return (
+                    <td key={i} className="month-cell">
+                      <span className={`total-cell ${total === 0 ? '' : total > 100 ? 'over' : 'ok'}`}
+                        style={{ fontSize: '0.85rem' }}>
+                        {total > 0 ? `${total}%` : <span style={{ color: '#e2e8f0' }}>–</span>}
+                      </span>
                     </td>
-                    {projects.map(p => {
-                      const pct = getPct(emp.id, p.id)
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {projects.length > 0 && (
+        <>
+          <h2 style={{ marginBottom: '1rem' }}>Auslastung je Projekt</h2>
+          {projects.map(proj => {
+            const projAssignments = assignments.filter(a => a.projectId === proj.id)
+            if (projAssignments.length === 0) return null
+            return (
+              <div key={proj.id} className="card" style={{ overflowX: 'auto', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
+                  <strong style={{ color: '#1a365d' }}>{proj.name}</strong>
+                  {proj.leader && <span style={{ color: '#718096', fontSize: '0.82rem' }}>PL: {proj.leader}</span>}
+                </div>
+                <table className="monthly-grid">
+                  <thead>
+                    <tr>
+                      <th className="emp-col">Mitarbeiter</th>
+                      {MONTHS.map((m, i) => <th key={i} className="month-col">{m}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projAssignments.map(a => {
+                      const emp = employees.find(e => e.id === a.employeeId)
+                      if (!emp) return null
                       return (
-                        <td key={p.id}>
-                          <span className={`pct-cell${pct === 0 ? ' zero' : ''}`}>
-                            {pct > 0 ? `${pct}%` : '–'}
-                          </span>
-                        </td>
+                        <tr key={a.id}>
+                          <td className="emp-col">
+                            <strong>{emp.name}</strong>
+                            {emp.role && <div className="emp-role">{emp.role}</div>}
+                          </td>
+                          {MONTHS.map((_, i) => {
+                            const pct = getProjectPct(emp.id, proj.id, i)
+                            return (
+                              <td key={i} className="month-cell">
+                                <span className={`pct-cell${pct === 0 ? ' zero' : ''}`} style={{ fontSize: '0.85rem' }}>
+                                  {pct > 0 ? `${pct}%` : <span style={{ color: '#e2e8f0' }}>–</span>}
+                                </span>
+                              </td>
+                            )
+                          })}
+                        </tr>
                       )
                     })}
-                    <td>
-                      <span className={`total-cell ${total > 100 ? 'over' : 'ok'}`}>
-                        {total}%
-                      </span>
-                      {total > 100 && (
-                        <span className="badge badge-red" style={{ marginLeft: '0.4rem' }}>!</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </tbody>
+                </table>
+              </div>
+            )
+          })}
+        </>
+      )}
     </>
   )
 }
