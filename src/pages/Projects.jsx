@@ -2,16 +2,29 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProjects, useAssignments, uid } from '../store.js'
 
+const CATEGORIES = ['ES-DEV', 'Simplify', 'Research']
+
+const CATEGORY_STYLE = {
+  'ES-DEV':   { background: '#ebf4ff', color: '#1a56db' },
+  'Simplify': { background: '#f0fff4', color: '#276749' },
+  'Research': { background: '#fef3c7', color: '#92400e' },
+}
+
+function CategoryBadge({ category }) {
+  if (!category) return <span style={{ color: '#a0aec0' }}>–</span>
+  const s = CATEGORY_STYLE[category] || { background: '#edf2f7', color: '#4a5568' }
+  return <span className="badge" style={s}>{category}</span>
+}
+
 function ProjectModal({ project, onSave, onClose }) {
   const [name, setName] = useState(project?.name ?? '')
   const [leader, setLeader] = useState(project?.leader ?? '')
-  const [start, setStart] = useState(project?.start ?? '')
-  const [end, setEnd] = useState(project?.end ?? '')
+  const [category, setCategory] = useState(project?.category ?? '')
 
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim()) return
-    onSave({ name: name.trim(), leader: leader.trim(), start, end })
+    onSave({ name: name.trim(), leader: leader.trim(), category })
   }
 
   return (
@@ -28,12 +41,11 @@ function ProjectModal({ project, onSave, onClose }) {
             <input value={leader} onChange={e => setLeader(e.target.value)} placeholder="Name des Projektleiters" />
           </div>
           <div className="form-group">
-            <label>Startdatum</label>
-            <input type="date" value={start} onChange={e => setStart(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Enddatum</label>
-            <input type="date" value={end} onChange={e => setEnd(e.target.value)} />
+            <label>Kategorie</label>
+            <select value={category} onChange={e => setCategory(e.target.value)}>
+              <option value="">– keine –</option>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Abbrechen</button>
@@ -47,7 +59,8 @@ function ProjectModal({ project, onSave, onClose }) {
 
 export default function Projects() {
   const [projects, setProjects] = useProjects()
-  const [assignments, setAssignments] = useAssignments()
+  const [, setAssignments] = useAssignments()
+  const [assignments] = useAssignments()
   const [modal, setModal] = useState(null)
 
   function handleSave(data) {
@@ -69,11 +82,6 @@ export default function Projects() {
     return assignments.filter(a => a.projectId === projectId).length
   }
 
-  function fmt(dateStr) {
-    if (!dateStr) return '–'
-    return new Date(dateStr).toLocaleDateString('de-DE')
-  }
-
   return (
     <>
       <div className="header-row">
@@ -89,10 +97,10 @@ export default function Projects() {
             <thead>
               <tr>
                 <th>Projektname</th>
+                <th>Kategorie</th>
                 <th>Projektleiter</th>
-                <th>Zeitraum</th>
                 <th>Mitarbeiter</th>
-                <th style={{ width: 160 }}>Aktionen</th>
+                <th style={{ width: 200 }}>Aktionen</th>
               </tr>
             </thead>
             <tbody>
@@ -103,10 +111,8 @@ export default function Projects() {
                       {p.name}
                     </Link>
                   </td>
+                  <td><CategoryBadge category={p.category} /></td>
                   <td>{p.leader || <span style={{ color: '#a0aec0' }}>–</span>}</td>
-                  <td style={{ fontSize: '0.82rem', color: '#718096' }}>
-                    {p.start || p.end ? `${fmt(p.start)} – ${fmt(p.end)}` : '–'}
-                  </td>
                   <td>
                     <span className="badge badge-blue">{assignmentCount(p.id)}</span>
                   </td>
@@ -134,3 +140,5 @@ export default function Projects() {
     </>
   )
 }
+
+export { CATEGORIES, CATEGORY_STYLE, CategoryBadge }
