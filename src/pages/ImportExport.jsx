@@ -178,12 +178,12 @@ export default function ImportExport() {
   // ── Assignment export ────────────────────────────────────────────────────
   function exportAssignments() {
     const monthKeys = getAllMonthKeys(assignments)
-    const rows = [['Mitarbeiter', 'Rolle', 'Projekt', 'Projektleiter', ...monthKeys]]
+    const rows = [['Mitarbeiter', 'Projekt', ...monthKeys]]
     assignments.forEach(a => {
       const emp = employees.find(e => e.id === a.employeeId)
       const proj = projects.find(p => p.id === a.projectId)
       if (!emp || !proj) return
-      rows.push([emp.name, emp.role || '', proj.name, proj.leader || '',
+      rows.push([emp.name, proj.name,
         ...monthKeys.map(k => (a.months && a.months[k]) ? a.months[k] : '')])
     })
     downloadCSV(toCSV(rows), 'ressourcenplan.csv')
@@ -198,17 +198,14 @@ export default function ImportExport() {
       const rows = parseCSV(ev.target.result)
       if (rows.length < 2) { alert('CSV leer oder ungültig.'); return }
       const [header, ...data] = rows
-      const iMA = header.indexOf('Mitarbeiter'), iRolle = header.indexOf('Rolle')
-      const iProj = header.indexOf('Projekt'), iPL = header.indexOf('Projektleiter')
+      const iMA = header.indexOf('Mitarbeiter')
+      const iProj = header.indexOf('Projekt')
       if (iMA < 0 || iProj < 0) { alert('CSV muss Spalten "Mitarbeiter" und "Projekt" enthalten.'); return }
       const monthCols = header.map((h, i) => ({ key: h, i })).filter(({ key }) => /^\d{4}-\d{2}$/.test(key))
       const parsed = data.filter(r => r.length > 1).map(r => {
         const months = {}
         monthCols.forEach(({ key, i }) => { const v = Number(r[i]); if (!isNaN(v) && v > 0) months[key] = v })
-        return {
-          mitarbeiter: r[iMA] || '', rolle: iRolle >= 0 ? (r[iRolle] || '') : '',
-          projekt: r[iProj] || '', projektleiter: iPL >= 0 ? (r[iPL] || '') : '', months,
-        }
+        return { mitarbeiter: r[iMA] || '', projekt: r[iProj] || '', months }
       })
       setAssignState({ preview: parsed, success: '' })
     }
@@ -221,9 +218,9 @@ export default function ImportExport() {
     preview.forEach(row => {
       if (!row.mitarbeiter || !row.projekt) return
       let emp = newEmp.find(e => e.name.toLowerCase() === row.mitarbeiter.toLowerCase())
-      if (!emp) { emp = { id: uid(), name: row.mitarbeiter, role: row.rolle }; newEmp.push(emp) }
+      if (!emp) { emp = { id: uid(), name: row.mitarbeiter, role: '' }; newEmp.push(emp) }
       let proj = newProj.find(p => p.name.toLowerCase() === row.projekt.toLowerCase())
-      if (!proj) { proj = { id: uid(), name: row.projekt, leader: row.projektleiter }; newProj.push(proj) }
+      if (!proj) { proj = { id: uid(), name: row.projekt, leader: '' }; newProj.push(proj) }
       let asgn = newAsgn.find(a => a.employeeId === emp.id && a.projectId === proj.id)
       if (!asgn) { asgn = { id: uid(), projectId: proj.id, employeeId: emp.id, months: {} }; newAsgn.push(asgn) }
       asgn.months = { ...asgn.months, ...row.months }
@@ -312,7 +309,7 @@ export default function ImportExport() {
                     <td>{r.projekt}</td>
                     <td style={{ fontSize: '0.8rem', color: '#718096' }}>
                       {Object.keys(r.months).length > 0
-                        ? Object.entries(r.months).map(([k, v]) => `${k}: ${v}%`).join(', ')
+                        ? Object.entries(r.months).map(([k, v]) => `${k}:${v}%`).join(', ')
                         : <span style={{ color: '#a0aec0' }}>keine</span>}
                     </td>
                   </tr>
