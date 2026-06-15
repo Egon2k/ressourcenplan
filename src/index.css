@@ -247,3 +247,145 @@ tr:hover td { background: #f7fafc; }
 }
 
 .back-link:hover { text-decoration: underline; }
+
+/* Month navigation (Overview) */
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.month-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2a4a7f;
+  min-width: 110px;
+  text-align: center;
+}
+
+/* Year navigation (ProjectDetail) */
+.year-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.year-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2a4a7f;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Monthly allocation grid */
+.monthly-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monthly-grid th,
+.monthly-grid td {
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+}
+
+.monthly-grid th {
+  background: #ebf4ff;
+  color: #1a365d;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  border-bottom: 2px solid #bee3f8;
+}
+
+.monthly-grid .emp-col {
+  text-align: left;
+  min-width: 150px;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 1;
+}
+
+.monthly-grid th.emp-col {
+  background: #ebf4ff;
+}
+
+.monthly-grid .month-col {
+  min-width: 52px;
+  width: 52px;
+  text-align: center;
+}
+
+.monthly-grid .avg-col {
+  min-width: 52px;
+  text-align: center;
+  background: #f7fafc;
+}
+
+.monthly-grid th.avg-col {
+  background: #dbeafe;
+}
+
+.monthly-grid .action-col {
+  width: 48px;
+  text-align: center;
+}
+
+.monthly-grid .month-cell {
+  text-align: center;
+  padding: 0.35rem 0.2rem;
+}
+
+.month-input {
+  width: 52px;
+  text-align: center;
+  border: 1.5px solid transparent;
+  border-radius: 4px;
+  padding: 0.25rem 0.2rem;
+  font-size: 0.85rem;
+  background: transparent;
+  color: #1a56db;
+  font-weight: 600;
+  transition: border-color 0.15s, background 0.15s;
+  -moz-appearance: textfield;
+}
+
+.month-input::-webkit-outer-spin-button,
+.month-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.month-input:hover {
+  border-color: #bee3f8;
+  background: #f0f7ff;
+}
+
+.month-input:focus {
+  outline: none;
+  border-color: #1a56db;
+  background: #ebf4ff;
+}
+
+.emp-role {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.1rem;
+}
+
+/* Import success message */
+.import-success {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  color: #276749;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
