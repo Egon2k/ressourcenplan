@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useEmployees, useProjects, useAssignments } from '../store.js'
 
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
@@ -109,7 +110,7 @@ export default function Overview() {
             return (
               <div key={proj.id} className="card" style={{ overflowX: 'auto', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-                  <strong style={{ color: '#1a365d' }}>{proj.name}</strong>
+                  <Link to={`/projekte/${proj.id}`} style={{ color: '#1a56db', textDecoration: 'none', fontWeight: 700 }}>{proj.name}</Link>
                   {proj.leader && <span style={{ color: '#718096', fontSize: '0.82rem' }}>PL: {proj.leader}</span>}
                 </div>
                 <table className="monthly-grid">
