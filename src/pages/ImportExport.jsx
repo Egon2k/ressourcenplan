@@ -54,7 +54,7 @@ export default function ImportExport() {
       rows.push(row)
     })
 
-    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -80,7 +80,7 @@ export default function ImportExport() {
           else cell += ch
         } else {
           if (ch === '"') inQuote = true
-          else if (ch === ',') { cells.push(cell); cell = '' }
+          else if (ch === ';') { cells.push(cell); cell = '' }
           else cell += ch
         }
       }
