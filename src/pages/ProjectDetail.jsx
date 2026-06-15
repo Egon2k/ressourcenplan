@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useProjects, useEmployees, useAssignments, uid } from '../store.js'
+import { CategoryBadge } from './Projects.jsx'
 
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
 
@@ -131,15 +132,13 @@ export default function ProjectDetail() {
       <Link to="/projekte" className="back-link">← Zurück zu Projekte</Link>
 
       <div className="card">
-        <h1>{project.name}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <h1 style={{ marginBottom: 0 }}>{project.name}</h1>
+          {project.category && <CategoryBadge category={project.category} />}
+        </div>
         {project.leader && (
-          <p style={{ color: '#718096', marginBottom: '0.5rem' }}>
+          <p style={{ color: '#718096' }}>
             <strong>Projektleiter:</strong> {project.leader}
-          </p>
-        )}
-        {(project.start || project.end) && (
-          <p style={{ color: '#718096', fontSize: '0.88rem' }}>
-            {fmt(project.start) ?? '–'} – {fmt(project.end) ?? '–'}
           </p>
         )}
       </div>
