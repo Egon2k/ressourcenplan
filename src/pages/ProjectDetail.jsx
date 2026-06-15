@@ -2,55 +2,10 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useProjects, useEmployees, useAssignments, uid } from '../store.js'
 
-function AssignmentModal({ assignment, employees, usedEmployeeIds, onSave, onClose }) {
-  const available = assignment
-    ? employees
-    : employees.filter(e => !usedEmployeeIds.includes(e.id))
+const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
 
-  const [employeeId, setEmployeeId] = useState(assignment?.employeeId ?? (available[0]?.id ?? ''))
-  const [percentage, setPercentage] = useState(assignment?.percentage ?? 100)
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    if (!employeeId) return
-    const pct = Math.max(1, Math.min(100, Number(percentage)))
-    onSave({ employeeId, percentage: pct })
-  }
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <h2>{assignment ? 'Zuordnung bearbeiten' : 'Mitarbeiter zuordnen'}</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Mitarbeiter</label>
-            <select value={employeeId} onChange={e => setEmployeeId(e.target.value)} disabled={!!assignment}>
-              {available.length === 0 && <option value="">Keine verfügbar</option>}
-              {available.map(e => (
-                <option key={e.id} value={e.id}>{e.name}{e.role ? ` (${e.role})` : ''}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Anteil in % (1–100)</label>
-            <input
-              type="number"
-              min="1"
-              max="100"
-              value={percentage}
-              onChange={e => setPercentage(e.target.value)}
-            />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Abbrechen</button>
-            <button type="submit" className="btn btn-primary" disabled={available.length === 0 && !assignment}>
-              Speichern
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+function toYM(year, monthIndex) {
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 }
 
 export default function ProjectDetail() {
@@ -58,7 +13,9 @@ export default function ProjectDetail() {
   const [projects] = useProjects()
   const [employees] = useEmployees()
   const [assignments, setAssignments] = useAssignments()
-  const [modal, setModal] = useState(null)
+
+  const now = new Date()
+  const [year, setYear] = useState(now.getFullYear())
 
   const project = projects.find(p => p.id === id)
   if (!project) {
@@ -72,14 +29,12 @@ export default function ProjectDetail() {
 
   const projectAssignments = assignments.filter(a => a.projectId === id)
   const usedEmployeeIds = projectAssignments.map(a => a.employeeId)
+  const availableEmployees = employees.filter(e => !usedEmployeeIds.includes(e.id))
 
-  function handleSave({ employeeId, percentage }) {
-    if (modal === 'add') {
-      setAssignments(prev => [...prev, { id: uid(), projectId: id, employeeId, percentage }])
-    } else {
-      setAssignments(prev => prev.map(a => a.id === modal.id ? { ...a, percentage } : a))
-    }
-    setModal(null)
+  function handleAddEmployee() {
+    if (availableEmployees.length === 0) return
+    const emp = availableEmployees[0]
+    setAssignments(prev => [...prev, { id: uid(), projectId: id, employeeId: emp.id, months: {} }])
   }
 
   function handleDelete(assignmentId) {
@@ -87,12 +42,35 @@ export default function ProjectDetail() {
     setAssignments(prev => prev.filter(a => a.id !== assignmentId))
   }
 
-  function getEmployee(empId) {
-    return employees.find(e => e.id === empId)
+  function handleCellChange(assignmentId, monthIndex, value) {
+    const ym = toYM(year, monthIndex)
+    const pct = value === '' ? 0 : Math.max(0, Math.min(100, Number(value)))
+    setAssignments(prev => prev.map(a => {
+      if (a.id !== assignmentId) return a
+      const months = { ...(a.months || {}) }
+      if (pct === 0) {
+        delete months[ym]
+      } else {
+        months[ym] = pct
+      }
+      return { ...a, months }
+    }))
   }
 
-  function getTotalForEmployee(empId) {
-    return assignments.filter(a => a.employeeId === empId).reduce((s, a) => s + a.percentage, 0)
+  function getMonthValue(assignment, monthIndex) {
+    const ym = toYM(year, monthIndex)
+    const months = assignment.months || {}
+    return months[ym] || 0
+  }
+
+  function getRowAvg(assignment) {
+    const months = assignment.months || {}
+    const total = Object.values(months).reduce((s, v) => s + v, 0)
+    return Math.round(total / 12)
+  }
+
+  function getEmployee(empId) {
+    return employees.find(e => e.id === empId)
   }
 
   function fmt(dateStr) {
@@ -120,13 +98,20 @@ export default function ProjectDetail() {
 
       <div className="header-row">
         <h2>Mitarbeiterzuordnungen</h2>
-        <button
-          className="btn btn-primary"
-          onClick={() => setModal('add')}
-          disabled={usedEmployeeIds.length >= employees.length || employees.length === 0}
-        >
-          + Mitarbeiter zuordnen
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="year-nav">
+            <button className="btn btn-secondary btn-sm" onClick={() => setYear(y => y - 1)}>←</button>
+            <span className="year-label">{year}</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setYear(y => y + 1)}>→</button>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={handleAddEmployee}
+            disabled={availableEmployees.length === 0 || employees.length === 0}
+          >
+            + Mitarbeiter zuordnen
+          </button>
+        </div>
       </div>
 
       {employees.length === 0 && (
@@ -136,40 +121,50 @@ export default function ProjectDetail() {
       )}
 
       {employees.length > 0 && (
-        <div className="card">
+        <div className="card" style={{ overflowX: 'auto' }}>
           {projectAssignments.length === 0 ? (
             <p className="empty-state">Noch keine Mitarbeiter diesem Projekt zugeordnet.</p>
           ) : (
-            <table>
+            <table className="monthly-grid">
               <thead>
                 <tr>
-                  <th>Mitarbeiter</th>
-                  <th>Rolle</th>
-                  <th>Anteil</th>
-                  <th>Gesamt-Auslastung</th>
-                  <th style={{ width: 140 }}>Aktionen</th>
+                  <th className="emp-col">Mitarbeiter</th>
+                  {MONTHS.map((m, i) => <th key={i} className="month-col">{m}</th>)}
+                  <th className="avg-col">Ø</th>
+                  <th className="action-col"></th>
                 </tr>
               </thead>
               <tbody>
                 {projectAssignments.map(a => {
                   const emp = getEmployee(a.employeeId)
-                  const total = getTotalForEmployee(a.employeeId)
+                  const avg = getRowAvg(a)
                   return (
                     <tr key={a.id}>
-                      <td><strong>{emp?.name ?? '?'}</strong></td>
-                      <td>{emp?.role || <span style={{ color: '#a0aec0' }}>–</span>}</td>
-                      <td><span className="pct-cell">{a.percentage}%</span></td>
-                      <td>
-                        <span className={`total-cell ${total > 100 ? 'over' : 'ok'}`}>
-                          {total}%
-                        </span>
-                        {total > 100 && <span className="badge badge-red" style={{ marginLeft: '0.4rem' }}>Überlastet</span>}
+                      <td className="emp-col">
+                        <strong>{emp?.name ?? '?'}</strong>
+                        {emp?.role && <div className="emp-role">{emp.role}</div>}
                       </td>
-                      <td>
-                        <div className="actions">
-                          <button className="btn btn-secondary btn-sm" onClick={() => setModal(a)}>Bearbeiten</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(a.id)}>Entfernen</button>
-                        </div>
+                      {MONTHS.map((_, i) => {
+                        const val = getMonthValue(a, i)
+                        return (
+                          <td key={i} className="month-cell">
+                            <input
+                              type="number"
+                              className="month-input"
+                              min="0"
+                              max="100"
+                              value={val === 0 ? '' : val}
+                              placeholder=""
+                              onChange={e => handleCellChange(a.id, i, e.target.value)}
+                            />
+                          </td>
+                        )
+                      })}
+                      <td className="avg-col">
+                        <span className="pct-cell">{avg > 0 ? `${avg}%` : '–'}</span>
+                      </td>
+                      <td className="action-col">
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(a.id)}>✕</button>
                       </td>
                     </tr>
                   )
@@ -178,16 +173,6 @@ export default function ProjectDetail() {
             </table>
           )}
         </div>
-      )}
-
-      {modal && (
-        <AssignmentModal
-          assignment={modal === 'add' ? null : modal}
-          employees={employees}
-          usedEmployeeIds={usedEmployeeIds}
-          onSave={handleSave}
-          onClose={() => setModal(null)}
-        />
       )}
     </>
   )
