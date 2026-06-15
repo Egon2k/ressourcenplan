@@ -36,7 +36,7 @@ export default function Overview() {
         <h1>Übersicht</h1>
         <div className="card">
           <p className="empty-state">
-            Bitte zuerst <a href="/mitarbeiter">Mitarbeiter</a> und <a href="/projekte">Projekte</a> anlegen.
+            Bitte zuerst <Link to="/mitarbeiter">Mitarbeiter</Link> und <Link to="/projekte">Projekte</Link> anlegen.
           </p>
         </div>
       </>
