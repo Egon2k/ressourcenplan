@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useEmployees, useProjects, useAssignments } from '../store.js'
+import { CategoryBadge } from './Projects.jsx'
 
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
 
@@ -109,8 +110,11 @@ export default function Overview() {
             if (projAssignments.length === 0) return null
             return (
               <div key={proj.id} className="card" style={{ overflowX: 'auto', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-                  <Link to={`/projekte/${proj.id}`} style={{ color: '#1a56db', textDecoration: 'none', fontWeight: 700 }}>{proj.name}</Link>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <Link to={`/projekte/${proj.id}`} style={{ color: '#1a56db', textDecoration: 'none', fontWeight: 700 }}>{proj.name}</Link>
+                    {proj.category && <CategoryBadge category={proj.category} />}
+                  </div>
                   {proj.leader && <span style={{ color: '#718096', fontSize: '0.82rem' }}>PL: {proj.leader}</span>}
                 </div>
                 <table className="monthly-grid">
