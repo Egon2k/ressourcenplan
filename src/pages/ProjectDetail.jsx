@@ -8,11 +8,60 @@ function toYM(year, monthIndex) {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 }
 
+function EmployeePickerModal({ available, onSelect, onClose }) {
+  const [search, setSearch] = useState('')
+  const filtered = available.filter(e =>
+    e.name.toLowerCase().includes(search.toLowerCase()) ||
+    (e.role && e.role.toLowerCase().includes(search.toLowerCase()))
+  )
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h2>Mitarbeiter zuordnen</h2>
+        <div className="form-group">
+          <input
+            autoFocus
+            placeholder="Suchen …"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div style={{ maxHeight: 260, overflowY: 'auto', margin: '0 -0.5rem' }}>
+          {filtered.length === 0 && (
+            <p style={{ color: '#a0aec0', padding: '1rem', textAlign: 'center' }}>Keine Treffer</p>
+          )}
+          {filtered.map(emp => (
+            <button
+              key={emp.id}
+              onClick={() => onSelect(emp)}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '0.6rem 0.75rem', border: 'none', background: 'none',
+                cursor: 'pointer', borderRadius: 6,
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#ebf4ff'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <strong>{emp.name}</strong>
+              {emp.role && <span style={{ marginLeft: '0.5rem', color: '#718096', fontSize: '0.82rem' }}>{emp.role}</span>}
+            </button>
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onClose}>Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProjectDetail() {
   const { id } = useParams()
   const [projects] = useProjects()
   const [employees] = useEmployees()
   const [assignments, setAssignments] = useAssignments()
+  const [showPicker, setShowPicker] = useState(false)
 
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -31,10 +80,9 @@ export default function ProjectDetail() {
   const usedEmployeeIds = projectAssignments.map(a => a.employeeId)
   const availableEmployees = employees.filter(e => !usedEmployeeIds.includes(e.id))
 
-  function handleAddEmployee() {
-    if (availableEmployees.length === 0) return
-    const emp = availableEmployees[0]
+  function handleAddEmployee(emp) {
     setAssignments(prev => [...prev, { id: uid(), projectId: id, employeeId: emp.id, months: {} }])
+    setShowPicker(false)
   }
 
   function handleDelete(assignmentId) {
@@ -106,7 +154,7 @@ export default function ProjectDetail() {
           </div>
           <button
             className="btn btn-primary"
-            onClick={handleAddEmployee}
+            onClick={() => setShowPicker(true)}
             disabled={availableEmployees.length === 0 || employees.length === 0}
           >
             + Mitarbeiter zuordnen
@@ -173,6 +221,13 @@ export default function ProjectDetail() {
             </table>
           )}
         </div>
+      )}
+      {showPicker && (
+        <EmployeePickerModal
+          available={availableEmployees}
+          onSelect={handleAddEmployee}
+          onClose={() => setShowPicker(false)}
+        />
       )}
     </>
   )
