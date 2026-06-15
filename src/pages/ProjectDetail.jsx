@@ -154,8 +154,15 @@ export default function ProjectDetail() {
           </div>
           <button
             className="btn btn-primary"
-            onClick={() => setShowPicker(true)}
-            disabled={availableEmployees.length === 0 || employees.length === 0}
+            onClick={() => {
+              if (availableEmployees.length === 0) {
+                alert(employees.length === 0
+                  ? 'Es sind noch keine Mitarbeiter angelegt.'
+                  : 'Alle Mitarbeiter sind diesem Projekt bereits zugeordnet.')
+                return
+              }
+              setShowPicker(true)
+            }}
           >
             + Mitarbeiter zuordnen
           </button>
